@@ -30,7 +30,7 @@ void init(){
     // Casting de MY_HEAP en pointeur de uint16_t pour stocker le header initial dans les deux premières cases de la heap.
     uint16_t* ptr = (uint16_t *) &MY_HEAP[0];
 
-    // Si la première case uint16_t est non-nulle càd si la heap stockait déjà des données on la reinitialise entièrement à 0.
+    // Si la première case uint16_t est non-nulle càd si la heap stockait déjà des données on la reinitialise toutes les cases à 0.
     if (*ptr != 0){
         for (int i = 0; i < sizeof(MY_HEAP); ++i) {
             MY_HEAP[i] = 0;
@@ -44,18 +44,23 @@ void init(){
 
 void my_free(void* pointer){
 
-    // On ne fait rien pointer est nul.
+    // On ne fait rien si pointer est nul.
     if (pointer != NULL) {
 
-        // On met le bit de poids faible du header a 0. pour
+        // On met le bit de poids faible du header a 0.
         uint16_t* h = (uint16_t*)pointer - 1;
         *h &= ~0x1;
 
-        // Si le prochain bloc est libre aussi on additionne les deux tailles.
+        // On fusionne les bloc suivant tant qu'ils sont libres et on additionne les tailles.
         uint16_t* next = h + (*h)/2;
-        if ((*next & 0x1) == 0) {
-            *h += *next;
+        while ((*next & 0x1) == 0 && next < (uint16_t*) &MY_HEAP[sizeof(MY_HEAP)]) {
+            uint16_t temp = *next;
+            *next = 0; // On efface le header.
+            *h += temp;
+            next += temp/2;
+
         }
+
     }
 }
 
@@ -72,26 +77,45 @@ void *my_malloc(size_t size){
     // size + taille du header (2) ajusté avec le facteur d'allignement de 8.
     uint16_t newsize = ((size + 9) / 8) * 8;
 
-    // Parcours les headers jusqu'a trouver un bloc libre de taille suffisante ou bien d'atteindre la fin de la heap (first fit).
-    while (((*h & 0x1) != 0 && h < (uint16_t*) &MY_HEAP[heap_len]) || (*h & ~0x1) < newsize){
+    // Parcours les headers jusqu'a trouver un bloc libre de taille suffisante (first fit) ou bien d'atteindre la fin de la heap.
+    while (h < (uint16_t*) &MY_HEAP[heap_len]){
 
-        // h est incrémenté par la taille stocké dans le header actuel et divisé par deux car notre pointeur est en uint16_t.
-        h += (*h & ~0x1)/2;
-    }
+        if ((*h & 0x1) == 0){
 
-    // Si un bloc satisfaisant les conditions a été trouvé.
-    if (h < (uint16_t *) &MY_HEAP[heap_len]){
+            // On fusionne les bloc suivant tant qu'ils sont libres et on additionne les tailles (comme dans my_free).
+            uint16_t* next = h + (*h)/2;
+            while ((*next & 0x1) == 0 && next < (uint16_t*) &MY_HEAP[heap_len]){
+                uint16_t temp = *next;
+                *next = 0;
+                *h += temp;
+                next += temp/2;
+            }
 
-        // Si le bloc suivant est libre on ajuste la taille disponible.
-        if (*(h + newsize/2)  == 0) {
-            *(h + newsize/2) = *h - newsize;
+            // Si le bloc libre satisfait les conditions.
+            if (*h >= newsize){
+
+                // Si la place disponible est supérieur à la place demandée, on ajuste les tailles.
+                if (*h > newsize){
+                    *(h + newsize/2) = *h - newsize;
+                    *h = newsize;
+                }
+
+                // On met le bit de poids faible à 1.
+                *h |= 0x1;
+
+                // On retourne un pointeur void vers le début de l'espace libre.
+                return (void*) h + 2;
+
+            } else {
+
+                // Si la taille du bloc libre n'est pas suffisante, h est incrémenté.
+                h += (*h)/2;
+            }
+        } else {
+
+            // Si le bloc est occupé, h est incrémenté.
+            h += (*h & ~0x1)/2;
         }
-
-        // On change la taille du header et on met le bit de poids faibla à 1.
-        *h = newsize | 0x1;
-
-        // On retourne un pointeur void vers le début de l'espace libre.
-        return (void*) h + 2;
     }
 
     // On retourne NULL si aucun blocs correspondant n'a été trouvé.
