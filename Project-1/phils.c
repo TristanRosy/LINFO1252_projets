@@ -4,67 +4,76 @@
 #include <stdbool.h>
 #include <unistd.h>
 
-pthread_t *phil;
+int PHILOSOPHES; // Nombre de philosophes
+#define CYCLES 1000000
+
 pthread_mutex_t *baguette;
-int N;
 
 void mange(int id) {
-    printf("Philosophe [%d] mange\n", id);
+    // Actions de manger sans attente
+    //printf("Philosophe [%d] mange\n", id);
+    // Les actions effectuées pour manger
 }
 
-void *philosophe(void *arg) {
+void* philosophe(void* arg) {
     int *id = (int *)arg;
     int left = *id;
-    int right = (left + 1) % N;
-    int first = *id % 2; // Utilisation de modulo pour différencier les philosophes pairs et impairs
+    int right = (left + 1) % PHILOSOPHES;
 
-    for (int i = 0; i < 10000; ++i) {
-        // philosophe pense
-        if (first == 0) {
+    for (int i = 0; i < CYCLES; i++) {
+        // Actions de penser sans attente
+        // Les actions effectuées pour penser
+
+        // Acquérir les baguettes dans l'ordre des adresses
+        if (left < right) {
             pthread_mutex_lock(&baguette[left]);
             pthread_mutex_lock(&baguette[right]);
         } else {
             pthread_mutex_lock(&baguette[right]);
             pthread_mutex_lock(&baguette[left]);
         }
+
         mange(*id);
-        pthread_mutex_unlock(&baguette[left]);
+
+        // Relâcher les baguettes dans l'ordre inverse des adresses
         pthread_mutex_unlock(&baguette[right]);
+        pthread_mutex_unlock(&baguette[left]);
     }
 
     return NULL;
 }
 
 int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Utilisation : %s [Nombre de philosophes]\n", argv[0]);
-        return EXIT_FAILURE;
+    if (argc < 2) {
+        printf("Veuillez spécifier le nombre de philosophes.\n");
+        return 1;
     }
 
-    N = atoi(argv[1]);
-    phil = (pthread_t *)malloc(N * sizeof(pthread_t));
-    baguette = (pthread_mutex_t *)malloc(N * sizeof(pthread_mutex_t));
+    int PHILOSOPHERS = atoi(argv[1]);
+    PHILOSOPHES = PHILOSOPHERS;
+    pthread_t phil[PHILOSOPHERS];
 
-    // Initialisation des mutex et création des threads
-    for (int i = 0; i < N; ++i) {
+    // Allocation dynamique pour les mutex
+    baguette = (pthread_mutex_t*)malloc(sizeof(pthread_mutex_t) * PHILOSOPHERS);
+    for (int i = 0; i < PHILOSOPHERS; ++i) {
         pthread_mutex_init(&baguette[i], NULL);
-        int *id = (int *)malloc(sizeof(int));
+    }
+
+    for (int i = 0; i < PHILOSOPHERS; ++i) {
+        int* id = malloc(sizeof(int)); // Alloue dynamiquement un ID pour chaque philosophe
         *id = i;
         pthread_create(&phil[i], NULL, philosophe, id);
     }
 
-    // Attendre la fin des cycles de pensée/manger
-    for (int i = 0; i < N; ++i) {
+    for (int i = 0; i < PHILOSOPHERS; ++i) {
         pthread_join(phil[i], NULL);
     }
 
-    // Nettoyage et fin du programme
-    for (int i = 0; i < N; ++i) {
+    // Libération des mutex
+    for (int i = 0; i < PHILOSOPHERS; ++i) {
         pthread_mutex_destroy(&baguette[i]);
     }
-
-    free(phil);
     free(baguette);
 
-    return EXIT_SUCCESS;
+    return 0;
 }
