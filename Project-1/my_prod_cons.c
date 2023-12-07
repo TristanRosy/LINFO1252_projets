@@ -1,10 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <semaphore.h>
 #include <pthread.h>
 #include <time.h>
 #include <errno.h>
 #include <string.h>
+#include "my_lock.h"
+#include "my_sem.h"
 
 #define BUFFER_SIZE 8 // Taille du buffer
 #define DATA_SIZE 8192 // Nombre de données à produire et consommer
@@ -15,9 +16,9 @@ int in; // Indice de production
 int out; // Indice de consommation
 int count; // Nombre d'éléments dans le buffer
 
-pthread_mutex_t myLock; // Mutex pour protéger l'accès au buffer et aux variables in, out et count.
-sem_t empty; // Sémaphore qui indique le nombre de places libres dans le buffer.
-sem_t full;  // Sémaphore qui indique le nombre de places remplies dans le buffer.
+my_lock_t mutex; // Mutex pour protéger l'accès au buffer et aux variables in, out et count.
+my_sem_t empty; // Sémaphore qui indique le nombre de places libres dans le buffer.
+my_sem_t full;  // Sémaphore qui indique le nombre de places remplies dans le buffer.
 
 /*
  * Fonction appelée en cas d'erreur.
@@ -38,10 +39,10 @@ void *producer(void* arg){
 
     for (int i = 0; i < *nb_prod; i++){
 
-        item = rand() - RAND_MAX / 2; // Production
+        item = rand() - RAND_MAX / 2; // Production d'un entier entre MIN_INT et MAX_INT.
 
-        sem_wait(&empty); // Attend qu'une place sois libre dans le buffer.
-        pthread_mutex_lock(&myLock);
+        my_sem_wait(&empty); // Attend qu'une place sois libre dans le buffer.
+        tatas_lock(&mutex);
 
         /// Section critique
         buffer[in] = item;
@@ -49,8 +50,8 @@ void *producer(void* arg){
         count++;
         /// Section critique
 
-        pthread_mutex_unlock(&myLock);
-        sem_post(&full); // Indique qu'une place supplémentaire est remplie dans le buffer.
+        unlock(&mutex);
+        my_sem_post(&full); // Indique qu'une place supplémentaire est remplie dans le buffer.
 
         for (int j = 0; j < 10000; j++); // simule un traitement utilisant de la ressource CPU
     }
@@ -67,19 +68,19 @@ void *consumer(void* arg){
 
     for (int i = 0; i < *nb_cons; i++){
 
-        sem_wait(&full); // Attend qu'une place sois remplie dans le buffer.
-        pthread_mutex_lock(&myLock);
+        my_sem_wait(&full); // Attend qu'une place sois remplie dans le buffer.
+        tatas_lock(&mutex);
 
         /// Section critique
-        //printf("Consumed : %d\n", buffer[out]); // Consommation
+        printf("Consumed : %d\n", buffer[out]); // Consommation
         out = (out + 1) % BUFFER_SIZE;
         count--;
         /// Section critique
 
-        pthread_mutex_unlock(&myLock);
-        sem_post(&empty); // Indique qu'une place supplémentaire est libre dans le buffer.
+        unlock(&mutex);
+        my_sem_post(&empty); // Indique qu'une place supplémentaire est libre dans le buffer.
 
-        for (int i = 0; i < 10000; i++); // Simule un traitement utilisant de la ressource CPU
+        for (int i = 0; i < 10000; i++); // simule un traitement utilisant de la ressource CPU
     }
 
     pthread_exit(NULL);
@@ -103,10 +104,10 @@ int main(int argc, char* argv[]){
     out = 0;
     count = 0;
 
-    // Initialisation du myLock et des sémaphores.
-    pthread_mutex_init(&myLock, NULL);
-    sem_init(&empty, 0, BUFFER_SIZE);
-    sem_init(&full, 0, 0);
+    // Initialisation du mutex et des sémaphores.
+    my_lock_init(&mutex);
+    my_sem_init(&empty, BUFFER_SIZE);
+    my_sem_init(&full, 0);
 
     // initialisation pour que rand() fonctionne correctement.
     srand(time(NULL));
@@ -136,11 +137,6 @@ int main(int argc, char* argv[]){
         err = pthread_join(consumers[i], NULL);
         if (err != 0) error(err, "pthread_join consumer :", i);
     }
-
-    // Destruction du myLock et des sémaphores.
-    pthread_mutex_destroy(&myLock);
-    sem_destroy(&empty);
-    sem_destroy(&full);
 
     //printf("nb_cons = %d, nb_prod = %d : execution finished!\n", nb_cons, nb_prod);
 

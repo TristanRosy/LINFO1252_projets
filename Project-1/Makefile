@@ -1,6 +1,6 @@
-SRCS := phils.c prod_cons.c read_write.c
+SRCS := phils.c prod_cons.c read_write.c my_phils.c my_prod_cons.c my_read_write.c
 CC := gcc
-CFLAGS := -Wall -lpthread
+CFLAGS := -Wall -lpthread my_lock.c my_sem.c
 
 EXECS := $(SRCS:.c=)
 

@@ -1,18 +1,19 @@
 #include <pthread.h>
 #include <stdio.h>
-#include <semaphore.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
+#include "my_lock.h"
+#include "my_sem.h"
 
 #define N_WRITINGS 640
 #define N_READINGS 2560
 
-pthread_mutex_t mutex_writer; // Mutex pour protéger la variable write_count.
-pthread_mutex_t mutex_reader; // Mutex pour protéger la variable read_count.
-pthread_mutex_t z; // Mutex permettant de donner la priorité absolue aux écrivains.
-sem_t db_writer; // Bloquer et débloquer l'accès aux écrivains.
-sem_t db_reader; // Bloquer et débloquer l'accès aux lecteurs.
+my_lock_t mutex_writer; // Mutex pour protéger la variable write_count.
+my_lock_t mutex_reader; // Mutex pour protéger la variable read_count.
+my_lock_t z; // Mutex permettant de donner la priorité absolue aux écrivains.
+my_sem_t db_writer; // Bloquer et débloquer l'accès aux écrivains.
+my_sem_t db_reader; // Bloquer et débloquer l'accès aux lecteurs.
 
 int write_count; // Compte le nombre d'écritures.
 int read_count; // Compte le nombre de lectures.
@@ -34,32 +35,32 @@ void *writer(void *arg) {
 
     for (int i = 0; i < *nb_writings; i++){
 
-        pthread_mutex_lock(&mutex_writer);
+        tatas_lock(&mutex_writer);
 
         /// section critique
         write_count++;
         if (write_count == 1) { // Arrivée du premier reader.
-            sem_wait(&db_reader); // Bloque les lecteurs.
+            my_sem_wait(&db_reader); // Bloque les lecteurs.
         }
         /// section critique
 
-        pthread_mutex_unlock(&mutex_writer);
-        sem_wait(&db_writer); // Bloque les autres écrivains et vérifie que la database n'est pas en train d'être lue.
+        unlock(&mutex_writer);
+        my_sem_wait(&db_writer); // Bloque les autres écrivains et vérifie que la database n'est pas en train d'être lue.
 
         for (int j = 0; j < 10000; ++j); // Simule l'écriture.
 
-        sem_post(&db_writer); // Libère les autres écrivains.
+        my_sem_post(&db_writer); // Libère les autres écrivains.
 
-        pthread_mutex_lock(&mutex_writer);
+        tatas_lock(&mutex_writer);
 
         /// section critique
         write_count--;
         if (write_count == 0) { // Départ du dernier writer
-            sem_post(&db_reader); // Libère les lecteurs
+            my_sem_post(&db_reader); // Libère les lecteurs
         }
         /// section critique
 
-        pthread_mutex_unlock(&mutex_writer);
+        unlock(&mutex_writer);
     }
 
     pthread_exit(NULL);
@@ -74,33 +75,33 @@ void *reader(void *arg) {
 
     for (int i = 0; i < *nb_readings; i++){
 
-        pthread_mutex_lock(&z);
-        sem_wait(&db_reader); // Attente d'être débloquer par les écrivains.
-        pthread_mutex_lock(&mutex_reader);
+        tatas_lock(&z);
+        my_sem_wait(&db_reader); // Attente d'être débloquer par les écrivains.
+        tatas_lock(&mutex_reader);
 
         /// section critique
         read_count++;
         if (read_count == 1) { // Arrivée du premier lecteur.
-            sem_wait(&db_writer); // Premier lecteur réserve la database pour être sur qu'aucun écrivain ne l'utilise.
+            my_sem_wait(&db_writer); // Premier lecteur réserve la database pour être sur qu'aucun écrivain ne l'utilise.
         }
         /// section critique
 
-        pthread_mutex_unlock(&mutex_reader);
-        sem_post(&db_reader);
-        pthread_mutex_unlock(&z);
+        unlock(&mutex_reader);
+        my_sem_post(&db_reader);
+        unlock(&z);
 
         for (int j = 0; j < 10000; ++j); // Simule la lecture.
 
-        pthread_mutex_lock(&mutex_reader);
+        tatas_lock(&mutex_reader);
 
         /// section critique
         read_count--;
         if (read_count == 0) { // Départ du dernier lecteur de la database écrivain.
-            sem_post(&db_writer);
+            my_sem_post(&db_writer);
         }
         /// section critique
 
-        pthread_mutex_unlock(&mutex_reader);
+        unlock(&mutex_reader);
     }
 
     pthread_exit(NULL);
@@ -125,11 +126,11 @@ int main(int argc, char* argv[]){
     write_count = 0;
 
     // Initialisation des mutex et des sémaphores.
-    pthread_mutex_init(&mutex_reader, NULL);
-    pthread_mutex_init(&mutex_writer, NULL);
-    pthread_mutex_init(&z, NULL);
-    sem_init(&db_writer, 0, 1);
-    sem_init(&db_reader, 0, 1);
+    my_lock_init(&mutex_reader);
+    my_lock_init(&mutex_writer);
+    my_lock_init(&z);
+    my_sem_init(&db_writer, 1);
+    my_sem_init(&db_reader, 1);
 
     int err;
 
@@ -156,13 +157,6 @@ int main(int argc, char* argv[]){
         err = pthread_join(readers[i], NULL);
         if (err != 0) error(err, "pthread_join consumer :", i);
     }
-
-    // Destruction des mutex et des sémaphores.
-    pthread_mutex_destroy(&mutex_reader);
-    pthread_mutex_destroy(&mutex_writer);
-    pthread_mutex_destroy(&z);
-    sem_destroy(&db_reader);
-    sem_destroy(&db_writer);
 
     //printf("Writers = %d, Readers = %d : execution finished!\n", nb_writer, nb_reader);
 
