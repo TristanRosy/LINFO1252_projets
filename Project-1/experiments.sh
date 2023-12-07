@@ -5,6 +5,8 @@
 > compilation_times.csv
 > compilation_times_attente_active.csv
 
+exec > /dev/null # Redirige la sortie standard (stdout) vers /dev/null.
+
 # Exécution du programme pour les primitives de verrouillage
 for i in 1 2 4 8 16 32 64; do
   # Répéter chaque nombre de threads cinq fois
