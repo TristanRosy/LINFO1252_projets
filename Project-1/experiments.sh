@@ -1,19 +1,40 @@
 #!/usr/bin/env bash
 
-OUTPUT_FILE="compilation_times.csv"
+# Suppression du contenu précédent des fichiers
+> primitives_attente_active.csv
+> compilation_times.csv
+> compilation_times_attente_active.csv
 
-exec >/dev/null # Désactiver toute sortie sur STDOUT.
+# Exécution du programme pour les primitives de verrouillage
+for i in 1 2 4 8 16 32 64; do
+  for j in {1..5}; do
+    for lock_type in "tas" "tatas" "botatas"; do
+      NUM_SECTIONS=$((6400 / i))
 
+      start_time=$(date +%s.%N)
+      elapsed_time=$(./prog $i $NUM_SECTIONS $lock_type)
+      end_time=$(date +%s.%N)
+      elapsed_time=$(echo "$end_time - $start_time" | bc)
+
+      echo -n "$i,$elapsed_time," >> primitives_attente_active.csv
+    done
+    echo "" >> primitives_attente_active.csv
+  done
+done
+
+# Exécution des programmes phil, prod_cons et read_write
 for i in 2 4 8 16 32 64; do
   for j in {1..5}; do
     phil_time=""
     prod_cons_time=""
     read_write_time=""
-    for k in "phils" "prod_cons" "read_write" ; do
+
+    for k in "phils" "prod_cons" "read_write"; do
       N=$i
       if [[ "$k" == "prod_cons" || "$k" == "read_write" ]]; then
         N=$((i/2))
       fi
+
       start_time=$(date +%s.%N)
       ./"$k" $N $N
       end_time=$(date +%s.%N)
@@ -31,6 +52,37 @@ for i in 2 4 8 16 32 64; do
           ;;
       esac
     done
-    echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> $OUTPUT_FILE
+
+    echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> compilation_times.csv
+
+    phil_time=""
+    prod_cons_time=""
+    read_write_time=""
+
+    for k in "my_phils" "my_prod_cons" "my_read_write"; do
+      N=$i
+      if [[ "$k" == "my_prod_cons" || "$k" == "my_read_write" ]]; then
+        N=$((i/2))
+      fi
+
+      start_time=$(date +%s.%N)
+      ./"$k" $N $N
+      end_time=$(date +%s.%N)
+      elapsed_time=$(echo "$end_time - $start_time" | bc)
+
+      case "$k" in
+        "my_phils")
+          phil_time="$elapsed_time"
+          ;;
+        "my_prod_cons")
+          prod_cons_time="$elapsed_time"
+          ;;
+        "my_read_write")
+          read_write_time="$elapsed_time"
+          ;;
+      esac
+    done
+
+    echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> compilation_times_attente_active.csv
   done
 done
