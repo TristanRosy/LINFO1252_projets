@@ -7,7 +7,10 @@
 
 # Exécution du programme pour les primitives de verrouillage
 for i in 1 2 4 8 16 32 64; do
-  for j in {1..5}; do
+  # Répéter chaque nombre de threads cinq fois
+  for repeat in {1..5}; do
+    echo -n "$i," >> primitives_attente_active.csv
+
     for lock_type in "tas" "tatas" "botatas"; do
       NUM_SECTIONS=$((6400 / i))
 
@@ -16,11 +19,14 @@ for i in 1 2 4 8 16 32 64; do
       end_time=$(date +%s.%N)
       elapsed_time=$(echo "$end_time - $start_time" | bc)
 
-      echo -n "$i,$elapsed_time," >> primitives_attente_active.csv
+      # Ajouter le temps après le nombre de threads
+      echo -n "$elapsed_time," >> primitives_attente_active.csv
     done
+    # Aller à la ligne pour la prochaine série de mesures avec le même nombre de threads
     echo "" >> primitives_attente_active.csv
   done
 done
+
 
 # Exécution des programmes phil, prod_cons et read_write
 for i in 2 4 8 16 32 64; do
@@ -86,3 +92,4 @@ for i in 2 4 8 16 32 64; do
     echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> compilation_times_attente_active.csv
   done
 done
+
