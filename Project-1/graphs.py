@@ -23,17 +23,6 @@ phils_mean_active, programme1_std_active = grouped_data_active['philosophes']['m
 prod_cons_mean_active, programme2_std_active = grouped_data_active['producteurs-consommateurs']['mean'], grouped_data_active['producteurs-consommateurs']['std']
 read_write_mean_active, programme3_std_active = grouped_data_active['lecteurs-écrivains']['mean'], grouped_data_active['lecteurs-écrivains']['std']
 
-# Lecture du troisième fichier CSV ("primitives_attente_active.csv")
-data_attente_act = pd.read_csv('primitives_attente_active.csv', header=None, names=['threads', 'philosophes', 'producteurs-consommateurs', 'lecteurs-écrivains'])
-grouped_data_attente_act = data_attente_act.groupby('threads').agg({'philosophes': ['mean', 'std'],
-                                                                    'producteurs-consommateurs': ['mean', 'std'],
-                                                                    'lecteurs-écrivains': ['mean', 'std']}).reset_index()
-
-threads_attente_act = grouped_data_attente_act['threads']
-phils_mean_attente_act, programme1_std_attente_act = grouped_data_attente_act['philosophes']['mean'], grouped_data_attente_act['philosophes']['std']
-prod_cons_mean_attente_act, programme2_std_attente_act = grouped_data_attente_act['producteurs-consommateurs']['mean'], grouped_data_attente_act['producteurs-consommateurs']['std']
-read_write_mean_attente_act, programme3_std_attente_act = grouped_data_attente_act['lecteurs-écrivains']['mean'], grouped_data_attente_act['lecteurs-écrivains']['std']
-
 # Génération des graphiques
 fig, axes = plt.subplots(2, 2, figsize=(15, 10))
 fig.suptitle('Temps d\'exécution en fonction du nombre de threads')
@@ -68,10 +57,28 @@ axes[1, 0].legend()
 axes[1, 0].grid(True)
 axes[1, 0].set_ylim(bottom=0)
 
-# Graphique pour le fichier "primitives_attente_act.csv"
-axes[1, 1].errorbar(threads_attente_act, phils_mean_attente_act, yerr=programme1_std_attente_act, label='Test and Set', marker='o')
-axes[1, 1].errorbar(threads_attente_act, prod_cons_mean_attente_act, yerr=programme2_std_attente_act, label='Test and Test and Set', marker='o')
-axes[1, 1].errorbar(threads_attente_act, read_write_mean_attente_act, yerr=programme3_std_attente_act, label='Back-off Test and Test and Set', marker='o')
+
+
+# Graphique pour le fichier "primitives_attente_active.csv"
+
+# Lecture du fichier CSV en spécifiant le nombre de colonnes à lire
+data = pd.read_csv('primitives_attente_active.csv', header=None, names=['threads', 'tas', 'tatas', 'botatas'], delimiter=',', usecols=[0, 1, 2, 3])
+
+# Calcul des moyennes et écarts types pour chaque nombre de threads
+grouped_data = data.groupby('threads').agg({'tas': ['mean', 'std'],
+                                            'tatas': ['mean', 'std'],
+                                            'botatas': ['mean', 'std']}).reset_index()
+
+threads = grouped_data['threads']
+phils_mean, programme1_std = grouped_data['tas']['mean'], grouped_data['tas']['std']
+prod_cons_mean, programme2_std = grouped_data['tatas']['mean'], grouped_data['tatas']['std']
+read_write_mean, programme3_std = grouped_data['botatas']['mean'], grouped_data['botatas']['std']
+
+# Intégration dans la structure de sous-graphiques existante
+axes[1, 1].errorbar(threads, phils_mean, yerr=programme1_std, label='tas', marker='o')
+axes[1, 1].errorbar(threads, prod_cons_mean, yerr=programme2_std, label='tatas', marker='o')
+axes[1, 1].errorbar(threads, read_write_mean, yerr=programme3_std, label='botatas', marker='o')
+
 axes[1, 1].set_title('Primitives Attente Active')
 axes[1, 1].set_xlabel('Nombre de Threads')
 axes[1, 1].set_ylabel('Temps d\'exécution (sec)')
@@ -79,5 +86,6 @@ axes[1, 1].legend()
 axes[1, 1].grid(True)
 axes[1, 1].set_ylim(bottom=0)
 
+# Affichage de la structure de sous-graphiques mise à jour
 plt.tight_layout()
 plt.show()
