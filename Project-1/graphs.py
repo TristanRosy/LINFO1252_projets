@@ -27,6 +27,12 @@ read_write_mean_active, programme3_std_active = grouped_data_active['lecteurs-é
 fig, axes = plt.subplots(2, 2, figsize=(15, 10))
 fig.suptitle('Temps d\'exécution en fonction du nombre de threads')
 
+specific_values = [2, 4, 8, 16, 32, 64]
+for ax in [axes[0, 0], axes[0, 1], axes[1, 0]]:
+    ax.set_xticks(specific_values)
+    ax.set_xticklabels(specific_values)
+
+
 # Graphiques pour les philosophes
 axes[0, 0].errorbar(threads_posix, phils_mean_posix, yerr=programme1_std_posix, label='Philosophes POSIX', marker='o')
 axes[0, 0].errorbar(threads_active, phils_mean_active, yerr=programme1_std_active, label='Philosophes Attente Active', marker='o')
@@ -61,6 +67,11 @@ axes[1, 0].set_ylim(bottom=0)
 
 # Graphique pour le fichier "primitives_attente_active.csv"
 
+specific_values_last = [1, 2, 4, 8, 16, 32, 64]
+
+axes[1, 1].set_xticks(specific_values_last)
+axes[1, 1].set_xticklabels(specific_values_last)
+
 # Lecture du fichier CSV en spécifiant le nombre de colonnes à lire
 data = pd.read_csv('primitives_attente_active.csv', header=None, names=['threads', 'tas', 'tatas', 'botatas'], delimiter=',', usecols=[0, 1, 2, 3])
 
@@ -75,11 +86,11 @@ prod_cons_mean, programme2_std = grouped_data['tatas']['mean'], grouped_data['ta
 read_write_mean, programme3_std = grouped_data['botatas']['mean'], grouped_data['botatas']['std']
 
 # Intégration dans la structure de sous-graphiques existante
-axes[1, 1].errorbar(threads, phils_mean, yerr=programme1_std, label='tas', marker='o')
-axes[1, 1].errorbar(threads, prod_cons_mean, yerr=programme2_std, label='tatas', marker='o')
-axes[1, 1].errorbar(threads, read_write_mean, yerr=programme3_std, label='botatas', marker='o')
+axes[1, 1].errorbar(threads, phils_mean, yerr=programme1_std, label='Test and Set', marker='o')
+axes[1, 1].errorbar(threads, prod_cons_mean, yerr=programme2_std, label='Test and Test and Set', marker='o')
+axes[1, 1].errorbar(threads, read_write_mean, yerr=programme3_std, label='Back-off Test and Test and Set', marker='o')
 
-axes[1, 1].set_title('Primitives Attente Active')
+axes[1, 1].set_title("Primitives d'Attente Active")
 axes[1, 1].set_xlabel('Nombre de Threads')
 axes[1, 1].set_ylabel('Temps d\'exécution (sec)')
 axes[1, 1].legend()
