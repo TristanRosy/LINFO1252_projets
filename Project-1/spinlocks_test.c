@@ -8,24 +8,63 @@ typedef struct {
     int num_sections;
 } ThreadArgs;
 
-void* thread_function(void* arg) {
-    int num_sections = *((int*)arg);
 
-    my_lock_t lock = {0}; // Initialisation du verrou par attente active, à l'extérieur de la boucle
+void* thread_function_tas(void* arg) {
+    ThreadArgs* args = (ThreadArgs*)arg;
+    int num_sections = args->num_sections;
+
+    my_lock_t lock = {0};
 
     for (int i = 0; i < num_sections; ++i) {
-        lock_manager_acquire(&lock, 1); // Utilisation du verrou par attente active
+        tas_lock(&lock);
 
         // Actions dans la section critique
 
         for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
 
-        unlock(&lock); // Libérer le verrou après la section critique de production
+        unlock(&lock);
     }
 
     pthread_exit(NULL);
 }
 
+void* thread_function_tatas(void* arg) {
+    ThreadArgs* args = (ThreadArgs*)arg;
+    int num_sections = args->num_sections;
+
+    my_lock_t lock = {0};
+
+    for (int i = 0; i < num_sections; ++i) {
+        tatas_lock(&lock);
+
+        // Actions dans la section critique
+
+        for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
+
+        unlock(&lock);
+    }
+
+    pthread_exit(NULL);
+}
+
+void* thread_function_bo_tatas(void* arg) {
+    ThreadArgs* args = (ThreadArgs*)arg;
+    int num_sections = args->num_sections;
+
+    my_lock_t lock = {0};
+
+    for (int i = 0; i < num_sections; ++i) {
+        bo_tatas_lock(&lock);
+
+        // Actions dans la section critique
+
+        for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
+
+        unlock(&lock);
+    }
+
+    pthread_exit(NULL);
+}
 
 int main(int argc, char* argv[]) {
     if (argc != 3) {
@@ -35,6 +74,7 @@ int main(int argc, char* argv[]) {
 
     int num_threads = atoi(argv[1]);
     int num_sections = atoi(argv[2]);
+    int lock_type = atoi(argv[3]); // Type de verrou à utiliser
 
     pthread_t threads[num_threads];
 
@@ -44,7 +84,20 @@ int main(int argc, char* argv[]) {
         args->num_sections = num_sections;
 
         // Créer le thread en passant la structure des arguments
-        pthread_create(&threads[i], NULL, thread_function, (void*)args);
+        switch (lock_type) {
+            case 1:
+                pthread_create(&threads[i], NULL, thread_function_tas, (void*)args);
+                break;
+            case 2:
+                pthread_create(&threads[i], NULL, thread_function_tatas, (void*)args);
+                break;
+            case 3:
+                pthread_create(&threads[i], NULL, thread_function_bo_tatas, (void*)args);
+                break;
+            default:
+                printf("Invalid lock type\n");
+                return 1;
+        }
     }
 
     // Attendre que tous les threads se terminent
