@@ -1,4 +1,4 @@
-SRCS := phils.c prod_cons.c read_write.c my_phils.c my_prod_cons.c my_read_write.c
+SRCS := phils.c prod_cons.c read_write.c my_phils.c my_prod_cons.c my_read_write.c spinlocks_test.c
 CC := gcc
 CFLAGS := -Wall -lpthread my_lock.c my_sem.c
 
@@ -11,7 +11,7 @@ all: $(EXECS)
 
 test: $(EXECS)
 	bash experiments.sh
-	python3 graphs.py
+	#python3 graphs.py
 
 clean:
 	rm -f $(EXECS)
