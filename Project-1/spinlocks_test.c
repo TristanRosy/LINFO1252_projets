@@ -8,7 +8,9 @@ typedef struct {
     int num_sections;
 } ThreadArgs;
 
-
+/*
+ * Fonction qui test l'algorithme Test-and-Set.
+ */
 void* thread_function_tas(void* arg) {
     ThreadArgs* args = (ThreadArgs*)arg;
     int num_sections = args->num_sections;
@@ -28,6 +30,9 @@ void* thread_function_tas(void* arg) {
     pthread_exit(NULL);
 }
 
+/*
+ * Fonction qui test l'algorithme Test-and-Test-and-Set.
+ */
 void* thread_function_tatas(void* arg) {
     ThreadArgs* args = (ThreadArgs*)arg;
     int num_sections = args->num_sections;
@@ -41,12 +46,16 @@ void* thread_function_tatas(void* arg) {
 
         for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
 
+
         unlock(&lock);
     }
 
     pthread_exit(NULL);
 }
 
+/*
+ * Fonction qui test l'algorithme Back-Off Test-and-Test-and-Set.
+ */
 void* thread_function_bo_tatas(void* arg) {
     ThreadArgs* args = (ThreadArgs*)arg;
     int num_sections = args->num_sections;
@@ -67,8 +76,8 @@ void* thread_function_bo_tatas(void* arg) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s <num_threads> <num_sections>\n", argv[0]);
+    if (argc != 4) {
+        printf("Usage: %s <num_threads> <num_sections> <lock_type>\n", argv[0]);
         return 1;
     }
 
@@ -100,7 +109,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // Attendre que tous les threads se terminent
+    // Attendre que tous les threads se terminent.
     for (int i = 0; i < num_threads; ++i) {
         pthread_join(threads[i], NULL);
     }
