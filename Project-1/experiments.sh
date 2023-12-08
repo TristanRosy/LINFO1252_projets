@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/time
 
 # Suppression du contenu précédent des fichiers
 > primitives_attente_active.csv
@@ -12,15 +12,9 @@ for i in 1 2 4 8 16 32 64; do
   # Répéter chaque nombre de threads cinq fois
   for repeat in {1..5}; do
     echo -n "$i," >> primitives_attente_active.csv
-
-    for lock_type in "tas" "tatas" "botatas"; do
+    for lock_type in {1..3}; do
       NUM_SECTIONS=$((6400 / i))
-
-      start_time=$(date +%s.%N)
-      elapsed_time=$(./prog $i $NUM_SECTIONS $lock_type)
-      end_time=$(date +%s.%N)
-      elapsed_time=$(echo "$end_time - $start_time" | bc)
-
+      elapsed_time=$(/usr/bin/time -f "%e" -q ./spinlocks_test $i $NUM_SECTIONS "$lock_type" 2>&1)
       # Ajouter le temps après le nombre de threads
       echo -n "$elapsed_time," >> primitives_attente_active.csv
     done
@@ -28,7 +22,6 @@ for i in 1 2 4 8 16 32 64; do
     echo "" >> primitives_attente_active.csv
   done
 done
-
 
 # Exécution des programmes phil, prod_cons et read_write
 for i in 2 4 8 16 32 64; do
@@ -43,10 +36,7 @@ for i in 2 4 8 16 32 64; do
         N=$((i/2))
       fi
 
-      start_time=$(date +%s.%N)
-      ./"$k" $N $N
-      end_time=$(date +%s.%N)
-      elapsed_time=$(echo "$end_time - $start_time" | bc)
+      elapsed_time=$(/usr/bin/time -f "%e" -q ./"$k" $N $N 2>&1)
 
       case "$k" in
         "phils")
@@ -73,10 +63,7 @@ for i in 2 4 8 16 32 64; do
         N=$((i/2))
       fi
 
-      start_time=$(date +%s.%N)
-      ./"$k" $N $N
-      end_time=$(date +%s.%N)
-      elapsed_time=$(echo "$end_time - $start_time" | bc)
+      elapsed_time=$(/usr/bin/time -f "%e" -q ./"$k" $N $N 2>&1)
 
       case "$k" in
         "my_phils")

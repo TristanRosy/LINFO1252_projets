@@ -32,11 +32,13 @@ void tatas_lock(my_lock_t *lock_var) {
 
 // backoff test and test and set lock
 void bo_tatas_lock(my_lock_t *lock_var) {
+    int delay = 10;
     while (xchg(&lock_var->lock, 1)) {
         // Attente active
 
         while(lock_var->lock){
-            for (int i = 0; i < 100; ++i);
+            for (int i = 0; i < delay; ++i);
+            if (delay < 1000000000000) delay *= 10;
         }
     }
 }
