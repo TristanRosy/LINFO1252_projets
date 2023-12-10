@@ -30,11 +30,11 @@ void* philosophe(void* arg) {
 
         // Acquérir les baguettes dans l'ordre des adresses.
         if (left < right) {
-            tatas_lock(&baguette[left]);
-            tatas_lock(&baguette[right]);
+            tas_lock(&baguette[left]);
+            tas_lock(&baguette[right]);
         } else {
-            tatas_lock(&baguette[right]);
-            tatas_lock(&baguette[left]);
+            tas_lock(&baguette[right]);
+            tas_lock(&baguette[left]);
         }
 
         mange(*id);

@@ -11,7 +11,7 @@ all: $(EXECS)
 
 test: $(EXECS)
 	bash experiments.sh
-	#python3 graphs.py
+	python3 graphs.py
 
 clean:
 	rm -f $(EXECS)

@@ -1,12 +1,11 @@
 #ifndef LINFO1252_PROJETS_MY_SEM_H
 #define LINFO1252_PROJETS_MY_SEM_H
 
-#include <pthread.h>
 #include "my_lock.h"
 
 typedef struct {
-    int value;
-    my_lock_t lock_sem;
+    int value; // Valeur du sémaphore.
+    my_lock_t lock_sem; // Verrou associé au sémaphore.
 } my_sem_t;
 
 void my_sem_init(my_sem_t *sem, int init_value);

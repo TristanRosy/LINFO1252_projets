@@ -14,8 +14,8 @@ pthread_mutex_t z; // Mutex permettant de donner la priorité absolue aux écriv
 sem_t db_writer; // Bloquer et débloquer l'accès aux écrivains.
 sem_t db_reader; // Bloquer et débloquer l'accès aux lecteurs.
 
-int write_count; // Compte le nombre d'écritures.
-int read_count; // Compte le nombre de lectures.
+int write_count; // Nombre d'écrivains actifs
+int read_count; // Nombre de lecteurs actifs
 
 /*
  * Fonction appelé en cas d'erreur.

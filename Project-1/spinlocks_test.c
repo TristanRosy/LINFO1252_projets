@@ -22,7 +22,7 @@ void* thread_function_tas(void* arg) {
 
         // Actions dans la section critique
 
-        for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
+        for (int j = 0; j < 1000000; ++j); // Simulation de traitement CPU entre la consommation et la production
 
         unlock(&lock);
     }
@@ -44,7 +44,7 @@ void* thread_function_tatas(void* arg) {
 
         // Actions dans la section critique
 
-        for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
+        for (int j = 0; j < 1000000; ++j); // Simulation de traitement CPU entre la consommation et la production
 
 
         unlock(&lock);
@@ -67,7 +67,7 @@ void* thread_function_bo_tatas(void* arg) {
 
         // Actions dans la section critique
 
-        for (int j = 0; j < 10000; ++j); // Simulation de traitement CPU entre la consommation et la production
+        for (int j = 0; j < 1000000; ++j); // Simulation de traitement CPU entre la consommation et la production
 
         unlock(&lock);
     }

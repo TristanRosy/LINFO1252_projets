@@ -2,7 +2,7 @@
 
 /*
  * Echange atomique entre value
- * et la valeur à l'adresse addr et retourne true si l'échange a réussi.
+ * et la valeur à l'adresse addr puis retourne true si l'échange a réussi.
  */
 bool xchg(int *addr, int value){
     int result;
@@ -36,8 +36,9 @@ void tas_lock(my_lock_t *lock_var) {
  */
 void tatas_lock(my_lock_t *lock_var) {
     while (xchg(&(lock_var->lock), 1)) {
+        // Attente active
 
-        while(lock_var->lock){} // Attente active
+        while(lock_var->lock){} // On attends que le verrou soit libre avant de retenter l'échange atomique.
     }
 }
 
@@ -47,10 +48,11 @@ void tatas_lock(my_lock_t *lock_var) {
 void bo_tatas_lock(my_lock_t *lock_var) {
     int delay = 100;
     while (xchg(&lock_var->lock, 1)) {
+        // Attente active
 
-        while(lock_var->lock){ // Attente active
+        while(lock_var->lock){
             for (int i = 0; i < delay; ++i);
-            if (delay < 10000000) delay *= 10; // Le délai est incrémenté jusqu'à un maximum.
+            if (delay < 100000000) delay *= 10; // Le délai est incrémenté jusqu'à un maximum.
         }
     }
 }

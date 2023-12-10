@@ -15,7 +15,7 @@ int in; // Indice de production
 int out; // Indice de consommation
 int count; // Nombre d'éléments dans le buffer
 
-pthread_mutex_t myLock; // Mutex pour protéger l'accès au buffer et aux variables in, out et count.
+pthread_mutex_t mutex; // Mutex pour protéger l'accès au buffer et aux variables in, out et count.
 sem_t empty; // Sémaphore qui indique le nombre de places libres dans le buffer.
 sem_t full;  // Sémaphore qui indique le nombre de places remplies dans le buffer.
 
@@ -41,7 +41,7 @@ void *producer(void* arg){
         item = rand() - RAND_MAX / 2; // Production
 
         sem_wait(&empty); // Attend qu'une place sois libre dans le buffer.
-        pthread_mutex_lock(&myLock);
+        pthread_mutex_lock(&mutex);
 
         /// Section critique
         buffer[in] = item;
@@ -49,7 +49,7 @@ void *producer(void* arg){
         count++;
         /// Section critique
 
-        pthread_mutex_unlock(&myLock);
+        pthread_mutex_unlock(&mutex);
         sem_post(&full); // Indique qu'une place supplémentaire est remplie dans le buffer.
 
         for (int j = 0; j < 10000; j++); // simule un traitement utilisant de la ressource CPU
@@ -68,7 +68,7 @@ void *consumer(void* arg){
     for (int i = 0; i < *nb_cons; i++){
 
         sem_wait(&full); // Attend qu'une place sois remplie dans le buffer.
-        pthread_mutex_lock(&myLock);
+        pthread_mutex_lock(&mutex);
 
         /// Section critique
         //printf("Consumed : %d\n", buffer[out]); // Consommation
@@ -76,7 +76,7 @@ void *consumer(void* arg){
         count--;
         /// Section critique
 
-        pthread_mutex_unlock(&myLock);
+        pthread_mutex_unlock(&mutex);
         sem_post(&empty); // Indique qu'une place supplémentaire est libre dans le buffer.
 
         for (int i = 0; i < 10000; i++); // Simule un traitement utilisant de la ressource CPU
@@ -103,8 +103,8 @@ int main(int argc, char* argv[]){
     out = 0;
     count = 0;
 
-    // Initialisation du myLock et des sémaphores.
-    pthread_mutex_init(&myLock, NULL);
+    // Initialisation du mutex et des sémaphores.
+    pthread_mutex_init(&mutex, NULL);
     sem_init(&empty, 0, BUFFER_SIZE);
     sem_init(&full, 0, 0);
 
@@ -137,8 +137,8 @@ int main(int argc, char* argv[]){
         if (err != 0) error(err, "pthread_join consumer :", i);
     }
 
-    // Destruction du myLock et des sémaphores.
-    pthread_mutex_destroy(&myLock);
+    // Destruction du mutex et des sémaphores.
+    pthread_mutex_destroy(&mutex);
     sem_destroy(&empty);
     sem_destroy(&full);
 
