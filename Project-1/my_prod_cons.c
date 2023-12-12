@@ -42,7 +42,7 @@ void *producer(void* arg){
         item = rand() - RAND_MAX / 2; // Production d'un entier entre MIN_INT et MAX_INT.
 
         my_sem_wait(&empty); // Attend qu'une place sois libre dans le buffer.
-        tas_lock(&mutex);
+        tatas_lock(&mutex);
 
         /// Section critique
         buffer[in] = item;
@@ -69,7 +69,7 @@ void *consumer(void* arg){
     for (int i = 0; i < *nb_cons; i++){
 
         my_sem_wait(&full); // Attend qu'une place sois remplie dans le buffer.
-        tas_lock(&mutex);
+        tatas_lock(&mutex);
 
         /// Section critique
         //printf("Consumed : %d\n", buffer[out]); // Consommation

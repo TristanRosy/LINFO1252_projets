@@ -7,23 +7,6 @@
 
 exec > /dev/null # Redirige la sortie standard (stdout) vers /dev/null.
 
-# Exécution du programme pour les primitives de verrouillage
-for i in 1 2 4 8 16 32 64; do
-  # Répéter chaque nombre de threads cinq fois
-  for repeat in {1..5}; do
-    echo -n "$i," >> primitives_attente_active.csv
-    for lock_type in {1..3}; do
-      NUM_SECTIONS=$((6400 / i))
-      elapsed_time=$(/usr/bin/time -f "%e" -q ./spinlocks_test $i $NUM_SECTIONS "$lock_type" 2>&1)
-      # Ajouter le temps après le nombre de threads
-      echo -n "$elapsed_time," >> primitives_attente_active.csv
-    done
-    # Aller à la ligne pour la prochaine série de mesures avec le même nombre de threads
-    echo "" >> primitives_attente_active.csv
-  done
-done
-
-# Exécution des programmes phil, prod_cons et read_write
 for i in 2 4 8 16 32 64; do
   for j in {1..5}; do
     phil_time=""
@@ -53,9 +36,9 @@ for i in 2 4 8 16 32 64; do
 
     echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> compilation_times.csv
 
-    phil_time=""
-    prod_cons_time=""
-    read_write_time=""
+    my_phil_time=""
+    my_prod_cons_time=""
+    my_read_write_time=""
 
     for k in "my_phils" "my_prod_cons" "my_read_write"; do
       N=$i
@@ -67,18 +50,38 @@ for i in 2 4 8 16 32 64; do
 
       case "$k" in
         "my_phils")
-          phil_time="$elapsed_time"
+          my_phil_time="$elapsed_time"
           ;;
         "my_prod_cons")
-          prod_cons_time="$elapsed_time"
+          my_prod_cons_time="$elapsed_time"
           ;;
         "my_read_write")
-          read_write_time="$elapsed_time"
+          my_read_write_time="$elapsed_time"
           ;;
       esac
     done
+    echo "$i,$my_phil_time,$my_prod_cons_time,$my_read_write_time" >> compilation_times_attente_active.csv
 
-    echo "$i,$phil_time,$prod_cons_time,$read_write_time" >> compilation_times_attente_active.csv
+    tas=""
+    tatas=""
+    botatas=""
+
+    NUM_SECTIONS=$((6400 / i))
+    for k in {1..3}; do
+      elapsed_time=$(/usr/bin/time -f "%e" -q ./spinlocks_test $i $NUM_SECTIONS $k 2>&1)
+      case "$k" in
+        "1")
+          tas="$elapsed_time"
+          ;;
+        "2")
+          tatas="$elapsed_time"
+          ;;
+        "3")
+          botatas="$elapsed_time"
+          ;;
+      esac
+    done
+    echo "$i,$tas,$tatas,$botatas" >> primitives_attente_active.csv
+
   done
 done
-

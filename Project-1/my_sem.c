@@ -15,10 +15,10 @@ void my_sem_init(my_sem_t *sem, int init_value){
  */
 void my_sem_wait(my_sem_t *sem){
 
-    tas_lock(&sem->lock_sem);
+    tatas_lock(&sem->lock_sem);
     while (sem->value <= 0){
         unlock(&(sem->lock_sem));
-        tas_lock(&(sem->lock_sem)); // Re-verrouiller avant de vérifier à nouveau.
+        tatas_lock(&(sem->lock_sem)); // Re-verrouiller avant de vérifier à nouveau.
     }
     sem->value--;
     unlock(&(sem->lock_sem));
@@ -28,7 +28,7 @@ void my_sem_wait(my_sem_t *sem){
  * Incrémente la valeur du sémaphore de 1.
  */
 void my_sem_post(my_sem_t *sem){
-    tas_lock(&(sem->lock_sem));
+    tatas_lock(&(sem->lock_sem));
     sem->value++;
     unlock(&(sem->lock_sem));
 }

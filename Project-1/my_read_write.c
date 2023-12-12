@@ -35,7 +35,7 @@ void *writer(void *arg) {
 
     for (int i = 0; i < *nb_writings; i++){
 
-        tas_lock(&mutex_writer);
+        tatas_lock(&mutex_writer);
 
         /// section critique
         write_count++;
@@ -51,7 +51,7 @@ void *writer(void *arg) {
 
         my_sem_post(&db_writer); // Libère les autres écrivains.
 
-        tas_lock(&mutex_writer);
+        tatas_lock(&mutex_writer);
 
         /// section critique
         write_count--;
@@ -75,9 +75,9 @@ void *reader(void *arg) {
 
     for (int i = 0; i < *nb_readings; i++){
 
-        tas_lock(&z);
+        tatas_lock(&z);
         my_sem_wait(&db_reader); // Attente d'être débloquer par les écrivains.
-        tas_lock(&mutex_reader);
+        tatas_lock(&mutex_reader);
 
         /// section critique
         read_count++;
@@ -92,7 +92,7 @@ void *reader(void *arg) {
 
         for (int j = 0; j < 10000; ++j); // Simule la lecture.
 
-        tas_lock(&mutex_reader);
+        tatas_lock(&mutex_reader);
 
         /// section critique
         read_count--;

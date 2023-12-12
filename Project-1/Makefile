@@ -9,6 +9,8 @@ all: $(EXECS)
 %: %.c
 	$(CC) $(CFLAGS) -o $@ $<
 
+# Lance le script bash qui enregistres tous les temps dans des fichiers csv,
+# puis un script python affiche les graphiques des performances testées.
 test: $(EXECS)
 	bash experiments.sh
 	python3 graphs.py
