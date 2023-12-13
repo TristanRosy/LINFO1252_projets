@@ -1,3 +1,5 @@
+#include <string.h>
+#include <stdio.h>
 #include "lib_tar.h"
 
 /**
@@ -16,7 +18,42 @@
  *         -3 if the archive contains a header with an invalid checksum value
  */
 int check_archive(int tar_fd) {
-    return 0;
+
+    int count = 0;
+
+
+    tar_header_t header;
+    ssize_t blocks = read(tar_fd, &header, 512);
+
+    while (blocks == 512) {
+
+
+        if (strncmp(header.magic, TMAGIC, 6) != 0) {
+            printf("test\n");
+            return -1;
+        }
+
+        if (strncmp(header.version, TVERSION, 2) != 0) {
+            return -2;
+        }
+
+        int sum = 0;
+        char* iter = (char*) &header;
+        for (int i = 0; i < 512; i++) {
+            if (i < 148 || 156 < i) sum += iter[i];
+        }
+
+        if (atoi(header.chksum) != (uint32_t) sum){
+            return -3;
+        }
+
+        lseek(tar_fd, atoi(header.size), SEEK_CUR);
+        blocks = read(tar_fd, &header, 512);
+        count++;
+    }
+
+
+    return count;
 }
 
 /**
@@ -32,6 +69,36 @@ int exists(int tar_fd, char *path) {
     return 0;
 }
 
+
+/**
+ * Création d'une fonction Helper pour les fonctions is_dir, is_file, is_symlink
+ *
+ * @param tar_fd A file descriptor pointing to the start of a valid tar archive file.
+ * @param path A path to an entry in the archive.
+ * @param typeflag the flag corresponding to dir/file/symlink
+ */
+
+int check_entry_type(int tar_fd, char *path, char typeflag) {
+    int found = 0;
+    tar_header_t header;
+    ssize_t blocks = read(tar_fd, &header, 512);
+    while (blocks == 512) {
+        if (strncmp(header.name, path, strlen(path)) == 0) {
+            if (header.typeflag == typeflag) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+        int file_size = strtol(header.size, NULL, 8);
+        int remaining_blocks = (file_size + 511) / 512;
+        lseek(tar_fd, remaining_blocks * 512, SEEK_CUR);
+        blocks = read(tar_fd, &header, 512);
+    }
+    return found;
+}
+
+
 /**
  * Checks whether an entry exists in the archive and is a directory.
  *
@@ -42,7 +109,7 @@ int exists(int tar_fd, char *path) {
  *         any other value otherwise.
  */
 int is_dir(int tar_fd, char *path) {
-    return 0;
+    return check_entry_type(tar_fd, path, '5');
 }
 
 /**
@@ -55,8 +122,10 @@ int is_dir(int tar_fd, char *path) {
  *         any other value otherwise.
  */
 int is_file(int tar_fd, char *path) {
-    return 0;
+    return check_entry_type(tar_fd, path, '0');
 }
+
+
 
 /**
  * Checks whether an entry exists in the archive and is a symlink.
@@ -67,7 +136,7 @@ int is_file(int tar_fd, char *path) {
  *         any other value otherwise.
  */
 int is_symlink(int tar_fd, char *path) {
-    return 0;
+    return check_entry_type(tar_fd, path, '2');
 }
 
 
@@ -97,7 +166,7 @@ int list(int tar_fd, char *path, char **entries, size_t *no_entries) {
     return 0;
 }
 
-/**
+/** ANTOINE
  * Reads a file at a given path in the archive.
  *
  * @param tar_fd A file descriptor pointing to the start of a valid tar archive file.

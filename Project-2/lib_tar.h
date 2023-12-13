@@ -70,6 +70,18 @@ int check_archive(int tar_fd);
  */
 int exists(int tar_fd, char *path);
 
+
+
+
+/**
+ * helper pr simplifier is_dir, is_file, is_symlink
+ */
+
+int check_entry_type(int tar_fd, char *path, char typeflag);
+
+
+
+
 /**
  * Checks whether an entry exists in the archive and is a directory.
  *
